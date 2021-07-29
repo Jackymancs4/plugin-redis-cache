@@ -1,0 +1,11 @@
+{
+    "repositories": [
+        {
+            "url": "https://github.com/kanboard/kanboard",
+            "type": "git"
+        }
+    ],
+    "require-dev": {
+        "kanboard/kanboard": "dev-master"
+    }
+}

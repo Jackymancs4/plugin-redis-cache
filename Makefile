@@ -1,4 +1,4 @@
-plugin=MyPlugin
+plugin=RedisCache
 
 all:
 	@ echo "Build archive for plugin ${plugin} version=${version}"
