@@ -1,9 +1,13 @@
 <?php
 
-namespace Kanboard\Plugin\S3;
+namespace Kanboard\Plugin\RedisCache;
 
 use Kanboard\Core\Plugin\Base;
 use Kanboard\Core\Translator;
+use Kanboard\Decorator\MetadataCacheDecorator;
+use Kanboard\Core\Cache\BaseCache;
+use Kanboard\Core\Tool;
+use LogicException;
 
 defined('AWS_KEY') or define('AWS_KEY', '');
 defined('AWS_SECRET') or define('AWS_SECRET', '');
@@ -16,20 +20,16 @@ class Plugin extends Base
 {
     public function initialize()
     {
-        if ($this->isConfigured()) {
-            $this->container['objectStorage'] = function() {
-                return new S3Storage(
-                    $this->getAwsAccessKey(),
-                    $this->getAwsSecretKey(),
-                    $this->getAwsRegion(),
-                    $this->getAwsBucket(),
-                    $this->getAwsPrefix(),
-                    $this->getAwsOptions()
-                );
-            };
-        }
 
-        $this->template->hook->attach('template:config:integrations', 's3:config');
+        $this->container['cacheDriver'] = function() {
+            return new RedisCache();
+        };
+
+        // $this->container['memoryCache'] = function() {
+        //     return new RedisCache();
+        // };
+
+        $this->template->hook->attach('template:config:integrations', 'RedisCache:config');
     }
 
     public function onStartup()
@@ -39,27 +39,27 @@ class Plugin extends Base
 
     public function getPluginName()
     {
-        return 'Amazon S3 Storage';
+        return 'Redis Cache';
     }
 
     public function getPluginDescription()
     {
-        return t('This plugin stores files to Amazon S3');
+        return t('This plugin allow to use Redis as a cache');
     }
 
     public function getPluginAuthor()
     {
-        return 'Frédéric Guillot';
+        return 'Giacomo Rossetto';
     }
 
     public function getPluginVersion()
     {
-        return '1.0.5';
+        return '0.1.0';
     }
 
     public function getPluginHomepage()
     {
-        return 'https://github.com/kanboard/plugin-s3';
+        return 'https://github.com/kanboard/plugin-redis-cache';
     }
 
     public function getCompatibleVersion()
@@ -70,7 +70,7 @@ class Plugin extends Base
     public function isConfigured()
     {
         if (!$this->getAwsAccessKey() || !$this->getAwsSecretKey() || !$this->getAwsRegion() || !$this->getAwsBucket()) {
-            $this->logger->info('Plugin AWS S3 not configured!');
+            $this->logger->info('Plugin Redis Cache not configured!');
             return false;
         }
 

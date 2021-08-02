@@ -1,5 +1,5 @@
 <h3>
-    <i class="fa fa-amazon fa-fw" aria-hidden="true"></i>
+    <i class="fa fa-redis fa-fw" aria-hidden="true"></i>
     Redis Cache
 </h3>
 <div class="panel">

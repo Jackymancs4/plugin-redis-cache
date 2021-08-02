@@ -3,17 +3,18 @@
 namespace Kanboard\Plugin\RedisCache;
 
 use Kanboard\Core\Cache\BaseCache;
+use Kanboard\Core\Cache\CacheInterface;
 use Kanboard\Core\Tool;
 use LogicException;
 
 /**
- * S3 storage driver
+ * Class FileCache
  *
- * @package objectStorage
- * @author Frederic Guillot
+ * @package Kanboard\Core\Cache
  */
-class S3Storage extends BaseCache
+class RedisCache extends BaseCache 
 {
+
     /**
      * Store an item in the cache
      *
@@ -36,6 +37,9 @@ class S3Storage extends BaseCache
      */
     public function get($key)
     {
+
+        print("2");
+
         $filename = $this->getFilenameFromKey($key);
 
         if (file_exists($filename)) {
@@ -53,7 +57,7 @@ class S3Storage extends BaseCache
     public function flush()
     {
         $this->createCacheFolder();
-        Tool::removeAllFiles(CACHE_DIR, false);
+        Tool::removeAllFiles("data/cache", false);
     }
 
     /**
@@ -80,7 +84,7 @@ class S3Storage extends BaseCache
      */
     protected function getFilenameFromKey($key)
     {
-        return CACHE_DIR.DIRECTORY_SEPARATOR.$key;
+        return "data/cache/".$key;
     }
 
     /**
@@ -91,9 +95,9 @@ class S3Storage extends BaseCache
      */
     protected function createCacheFolder()
     {
-        if (! is_dir(CACHE_DIR)) {
-            if (! mkdir(CACHE_DIR, 0755)) {
-                throw new LogicException('Unable to create cache directory: '.CACHE_DIR);
+        if (! is_dir("data/cache")) {
+            if (! mkdir("data/cache", 0755)) {
+                throw new LogicException('Unable to create cache directory: '."data/cache");
             }
         }
     }
