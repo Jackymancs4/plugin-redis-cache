@@ -6,26 +6,83 @@ use Kanboard\Core\Cache\BaseCache;
 use Kanboard\Core\Cache\CacheInterface;
 use Kanboard\Core\Tool;
 use LogicException;
+use Redis;
 
 /**
  * Class FileCache
  *
  * @package Kanboard\Core\Cache
  */
-class RedisCache extends BaseCache 
+class RedisCache extends BaseCache
 {
 
+    private Redis $redis;
+
+    private bool $is_connected;
+
+    private string $prefix;
+
+    private string $divider = ':';
+
     /**
-     * Store an item in the cache
+     * Undocumented function
      *
-     * @access public
-     * @param  string $key
-     * @param  mixed  $value
+     * @param string $address
+     * @param int $port
+     * @param string $username
+     * @param string $password
+     * @param int $database
+     * @param string $prefix
      */
-    public function set($key, $value)
+    public function __construct($address, $port, $username, $password, $database, $prefix)
     {
-        $this->createCacheFolder();
-        file_put_contents($this->getFilenameFromKey($key), serialize($value));
+        $this->redis = new Redis();
+        $this->is_connected = $this->redis->connect($address, $port);
+
+        if ($password != null) {
+            if ($username != null) {
+                $this->is_connected = $this->redis->auth(['user' => $username, 'pass' => $password]);
+            } else {
+                $this->is_connected = $this->redis->auth(['pass' => $password]);
+            }
+        }
+
+        if ($database != null) {
+            $this->redis->select($database);
+        }
+
+        $this->setPrefix($prefix);
+        $this->redis->setOption(Redis::OPT_PREFIX, $this->getPrefix());
+    }
+
+    public function getPrefix()
+    {
+        if ($this->prefix != null && $this->prefix != "") {
+            $trailingChar = substr($this->prefix, -1);
+
+            if ($trailingChar == $this->divider) {
+                return $this->prefix;
+            } else {
+                return $this->prefix . $this->divider;
+            }
+        } else {
+            return "kanboard:";
+        }
+    }
+
+    public function setPrefix($string)
+    {
+        if ($string != null && $string != "") {
+            $trailingChar = substr($string, -1);
+
+            if ($trailingChar == $this->divider) {
+                $this->prefix = $string;
+            } else {
+                $this->prefix = $string . $this->divider;
+            }
+        } else {
+            $this->prefix =  "kanboard:";
+        }
     }
 
     /**
@@ -38,15 +95,26 @@ class RedisCache extends BaseCache
     public function get($key)
     {
 
-        print("2");
+        $keyname = $this->getFilenameFromKey($key);
+        $value = $this->redis->get($keyname);
 
-        $filename = $this->getFilenameFromKey($key);
-
-        if (file_exists($filename)) {
-            return unserialize(file_get_contents($filename));
+        if ($value) {
+            return unserialize($value);
         }
 
         return null;
+    }
+
+    /**
+     * Store an item in the cache
+     *
+     * @access public
+     * @param  string $key
+     * @param  mixed  $value
+     */
+    public function set($key, $value)
+    {
+        $this->redis->set($this->getFilenameFromKey($key), serialize($value));
     }
 
     /**
@@ -56,8 +124,7 @@ class RedisCache extends BaseCache
      */
     public function flush()
     {
-        $this->createCacheFolder();
-        Tool::removeAllFiles("data/cache", false);
+        $this->redis->flushDb();
     }
 
     /**
@@ -68,11 +135,7 @@ class RedisCache extends BaseCache
      */
     public function remove($key)
     {
-        $filename = $this->getFilenameFromKey($key);
-
-        if (file_exists($filename)) {
-            unlink($filename);
-        }
+        $this->redis->del($this->getFilenameFromKey($key));
     }
 
     /**
@@ -84,21 +147,16 @@ class RedisCache extends BaseCache
      */
     protected function getFilenameFromKey($key)
     {
-        return "data/cache/".$key;
+        return $key;
     }
 
     /**
      * Create cache folder if missing
      *
      * @access protected
-     * @throws LogicException
      */
-    protected function createCacheFolder()
+    protected function isConnected()
     {
-        if (! is_dir("data/cache")) {
-            if (! mkdir("data/cache", 0755)) {
-                throw new LogicException('Unable to create cache directory: '."data/cache");
-            }
-        }
+        return $this->is_connected;
     }
 }

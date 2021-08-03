@@ -9,24 +9,27 @@ use Kanboard\Core\Cache\BaseCache;
 use Kanboard\Core\Tool;
 use LogicException;
 
-defined('AWS_KEY') or define('AWS_KEY', '');
-defined('AWS_SECRET') or define('AWS_SECRET', '');
-defined('AWS_S3_BUCKET') or define('AWS_S3_BUCKET', '');
-defined('AWS_S3_REGION') or define('AWS_S3_REGION', '');
-defined('AWS_S3_PREFIX') or define('AWS_S3_PREFIX', '');
-defined('AWS_S3_OPTIONS') or define('AWS_S3_OPTIONS', '');
+defined('REDIS_ADDRESS') or define('REDIS_ADDRESS', '');
+defined('REDIS_PORT') or define('REDIS_PORT', null);
+defined('REDIS_USERNAME') or define('REDIS_USERNAME', '');
+defined('REDIS_PASSWORD') or define('REDIS_PASSWORD', '');
+defined('REDIS_DATABASE') or define('REDIS_DATABASE', null);
+defined('REDIS_PREFIX') or define('REDIS_PREFIX', '');
 
 class Plugin extends Base
 {
     public function initialize()
     {
 
-        $this->container['cacheDriver'] = function() {
-            return new RedisCache();
-        };
-
-        // $this->container['memoryCache'] = function() {
-        //     return new RedisCache();
+        // $this->container['cacheDriver'] = function () {
+        //     return new RedisCache(
+        //         $this->getRedisAddress(),
+        //         $this->getRedisPort(),
+        //         $this->getRedisUsername(),
+        //         $this->getRedisPassword(),
+        //         $this->getRedisDatabase(),
+        //         $this->getRedisPrefix()
+        //     );
         // };
 
         $this->template->hook->attach('template:config:integrations', 'RedisCache:config');
@@ -34,7 +37,7 @@ class Plugin extends Base
 
     public function onStartup()
     {
-        Translator::load($this->languageModel->getCurrentLanguage(), __DIR__.'/Locale');
+        Translator::load($this->languageModel->getCurrentLanguage(), __DIR__ . '/Locale');
     }
 
     public function getPluginName()
@@ -69,7 +72,7 @@ class Plugin extends Base
 
     public function isConfigured()
     {
-        if (!$this->getAwsAccessKey() || !$this->getAwsSecretKey() || !$this->getAwsRegion() || !$this->getAwsBucket()) {
+        if (!$this->getRedisAddress() || !$this->getRedisPort() || !$this->getRedisUsername() || !$this->getRedisPassword()) {
             $this->logger->info('Plugin Redis Cache not configured!');
             return false;
         }
@@ -77,57 +80,57 @@ class Plugin extends Base
         return true;
     }
 
-    public function getAwsAccessKey()
+    public function getRedisAddress()
     {
-        if (AWS_KEY) {
-            return AWS_KEY;
+        if (REDIS_ADDRESS) {
+            return REDIS_ADDRESS;
         }
 
-        return $this->configModel->get('aws_access_key_id');
+        return $this->configModel->get('redis_address');
     }
 
-    public function getAwsSecretKey()
+    public function getRedisPort()
     {
-        if (AWS_SECRET) {
-            return AWS_SECRET;
+        if (REDIS_PORT) {
+            return REDIS_PORT;
         }
 
-        return $this->configModel->get('aws_secret_access_key');
+        return $this->configModel->get('redis_port');
     }
 
-    public function getAwsRegion()
+    public function getRedisUsername()
     {
-        if (AWS_S3_REGION) {
-            return AWS_S3_REGION;
+        if (REDIS_USERNAME) {
+            return REDIS_USERNAME;
         }
 
-        return $this->configModel->get('aws_s3_region');
+        return $this->configModel->get('redis_username');
     }
 
-    public function getAwsBucket()
+    public function getRedisPassword()
     {
-        if (AWS_S3_BUCKET) {
-            return AWS_S3_BUCKET;
+        if (REDIS_PASSWORD) {
+            return REDIS_PASSWORD;
         }
 
-        return $this->configModel->get('aws_s3_bucket');
+        return $this->configModel->get('redis_password');
     }
 
-    public function getAwsPrefix()
+    public function getRedisDatabase()
     {
-        if (AWS_S3_PREFIX) {
-            return AWS_S3_PREFIX;
+        if (REDIS_DATABASE) {
+            return REDIS_DATABASE;
         }
 
-        return $this->configModel->get('aws_s3_prefix');
+        return $this->configModel->get('redis_database');
     }
 
-    public function getAwsOptions()
+    public function getRedisPrefix()
     {
-        if (AWS_S3_OPTIONS) {
-            return json_decode(AWS_S3_OPTIONS, true);
+        if (REDIS_PREFIX) {
+            return REDIS_PREFIX;
         }
 
-        return json_decode($this->configModel->get('aws_s3_options') ?: '{}', true);
+        return $this->configModel->get('redis_prefix');
     }
 }
