@@ -72,7 +72,7 @@ class Plugin extends Base
 
     public function isConfigured()
     {
-        if (!$this->getRedisAddress() || !$this->getRedisPort() || !$this->getRedisUsername() || !$this->getRedisPassword()) {
+        if (!$this->getRedisAddress() || !$this->getRedisPort()) {
             $this->logger->info('Plugin Redis Cache not configured!');
             return false;
         }
